@@ -1,9 +1,3 @@
-"""
-Class for plotting a quadrotor
-
-Author: Daniel Ingram (daniel-s-ingram)
-"""
-
 from math import cos, sin
 import numpy as np
 import matplotlib.pyplot as plt
@@ -46,18 +40,38 @@ class Quadrotor():
             self.plot()
 
     def transformation_matrix(self):
-        x = self.x
-        y = self.y
-        z = self.z
-        roll = self.roll
-        pitch = self.pitch
-        yaw = self.yaw
-        return np.array(
-            [[cos(yaw) * cos(pitch), -sin(yaw) * cos(roll) + cos(yaw) * sin(pitch) * sin(roll), sin(yaw) * sin(roll) + cos(yaw) * sin(pitch) * cos(roll), x],
-             [sin(yaw) * cos(pitch), cos(yaw) * cos(roll) + sin(yaw) * sin(pitch)
-              * sin(roll), -cos(yaw) * sin(roll) + sin(yaw) * sin(pitch) * cos(roll), y],
-             [-sin(pitch), cos(pitch) * sin(roll), cos(pitch) * cos(roll), z]
-             ])
+        x, y, z = self.x, self.y, self.z
+        roll, pitch, yaw = self.roll, self.pitch, self.yaw
+
+        # Rotation matrix
+        R_yaw = np.array([
+            [cos(yaw), -sin(yaw), 0],
+            [sin(yaw), cos(yaw), 0],
+            [0, 0, 1]
+        ])
+
+        R_pitch = np.array([
+            [cos(pitch), 0, sin(pitch)],
+            [0, 1, 0],
+            [-sin(pitch), 0, cos(pitch)]
+        ])
+
+        R_roll = np.array([
+            [1, 0, 0],
+            [0, cos(roll), -sin(roll)],
+            [0, sin(roll), cos(roll)]
+        ])
+
+        # Combined rotation matrix
+        R = np.dot(np.dot(R_yaw, R_pitch), R_roll)
+
+        # Translation vector
+        T = np.array([[x, y, z]]).T
+
+        # Homogeneous transformation matrix
+        transformation_matrix = np.vstack([np.hstack([R, T]), [0, 0, 0, 1]])
+
+        return transformation_matrix
 
     def plot(self):  # pragma: no cover
         T = self.transformation_matrix()
@@ -85,3 +99,9 @@ class Quadrotor():
         self.ax.set_zlim(0, 10)
 
         plt.pause(0.001)
+
+# Example usage:
+if __name__ == "__main__":
+    quadrotor = Quadrotor()
+    for i in range(100):
+        quadrotor.update_pose(x=i * 0.1, y=i * 0.1, z=i * 0.1, roll=i * 0.01, pitch=i * 0.01, yaw=i * 0.01)
